@@ -115,6 +115,13 @@ p.text-muted {
   background-color: var(--color-progress-fill);
 }
 
+.intro-section p + p {
+  border-top: 1px solid rgba(0,0,0,0.08);
+  padding-top: 16px;
+  margin-top: 16px;
+}
+
+
 
 /* ============================
    NEXT BUTTON — Pill, Teal
