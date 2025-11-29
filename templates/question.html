@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<!-- ============================
+     PROGRESS HEADER
+=============================== -->
+<div class="mb-3">
+  <div class="d-flex justify-content-between mb-1">
+    <small>Question {{ index + 1 }} of {{ total }}</small>
+    <small>{{ progress }}% complete</small>
+  </div>
+
+  <div class="progress" style="height: 10px;">
+    <div
+      class="progress-bar"
+      role="progressbar"
+      style="width: {{ progress }}%;"
+      aria-valuenow="{{ progress }}"
+      aria-valuemin="0"
+      aria-valuemax="100"
+    ></div>
+  </div>
+</div>
+
+<!-- ============================
+     QUESTION CARD
+=============================== -->
+<div class="card">
+  <div class="card-body">
+    <h5 class="card-title">{{ question.text }}</h5>
+
+    <form method="post" class="mt-3">
+
+      <!-- ============================
+           INPUT FIELDS + NEXT BUTTON
+      =============================== -->
+      <div class="row g-4 align-items-end">
+
+        <div class="col-md-4">
+          <label for="lower" class="form-label">Lower bound</label>
+          <input
+            type="text"
+            class="form-control"
+            id="lower"
+            name="lower"
+            value="{{ lower_value }}"
+            required
+          >
+        </div>
+
+        <div class="col-md-4">
+          <label for="upper" class="form-label">Upper bound</label>
+          <input
+            type="text"
+            class="form-control"
+            id="upper"
+            name="upper"
+            value="{{ upper_value }}"
+            required
+          >
+        </div>
+
+        <!-- FULL-WIDTH NEXT BUTTON in remaining column -->
+        <div class="col-md-4 d-flex justify-content-end">
+          <button type="submit" class="btn next-button w-100">
+            {% if index + 1 == total %}See results{% else %}Next{% endif %}
+          </button>
+        </div>
+
+      </div>
+
+      <!-- ============================
+           ERROR MESSAGE
+      =============================== -->
+      {% if error %}
+        <div class="alert alert-danger mt-3">
+          {{ error }}
+        </div>
+      {% endif %}
+
+      <!-- ============================
+           BACK BUTTON (PILL, SMALLER)
+      =============================== -->
+      <div class="mt-4">
+        {% if index > 0 %}
+          <a href="{{ url_for('question', index=index-1) }}" class="btn back-button">
+            ← Back
+          </a>
+        {% endif %}
+      </div>
+
+    </form>
+  </div>
+</div>
+
+{% endblock %}

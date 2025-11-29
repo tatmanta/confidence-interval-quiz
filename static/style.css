@@ -1,0 +1,262 @@
+/* Palette and typography */
+
+:root {
+  /* Core neutrals */
+  --color-bg: #fbfaf6;          /* off white */
+  --color-text-main: #121212;   /* off black */
+  --color-text-muted: #6f747b;
+
+  /* Palette from your swatch row */
+  --color-palette-black: #000000;
+  --color-palette-red: #e4574f;
+  --color-palette-pink: #f8c9c2;
+  --color-palette-teal: #2f7e90;
+  --color-palette-grey: #8c939b;
+  --color-palette-white: #ffffff;
+
+  /* Derived UI colors */
+  --color-surface: #ffffff;
+  --color-border-subtle: rgba(0, 0, 0, 0.06);
+  --color-border-strong: #111111;
+
+  --color-primary: var(--color-palette-teal);
+  --color-primary-hover: #266578;
+  --color-success: #00d084;
+  --color-danger: var(--color-palette-red);
+
+  --color-progress-track: rgba(0, 0, 0, 0.05);
+  --color-progress-fill: var(--color-primary);
+
+  --font-base: "Roboto Mono", system-ui, -apple-system, BlinkMacSystemFont,
+               "Segoe UI", sans-serif;
+  --font-headings: "Inter Tight", system-ui, -apple-system, BlinkMacSystemFont,
+                   "Segoe UI", sans-serif;
+  --font-input: "Inter Tight", system-ui, -apple-system, BlinkMacSystemFont,
+                "Segoe UI", sans-serif;
+
+  --radius-card: 14px;
+  --radius-pill: 999px;
+
+  --shadow-soft: 0 12px 30px rgba(0, 0, 0, 0.06);
+}
+
+/* Global layout */
+
+body {
+  font-family: var(--font-base);
+  background-color: var(--color-bg);
+  color: var(--color-text-main);
+}
+
+body.bg-light {
+  background-color: var(--color-bg) !important;
+}
+
+h1, h2, h3, h4, h5 {
+  font-family: var(--font-headings);
+}
+
+.disclaimer {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  font-size: 0.85rem;
+  color: #6a737d; /* GitHub muted text */
+  margin-top: 1rem;
+  line-height: 1.4;
+  font-weight: 400;
+  font-style: italic;
+  text-align: center;
+}
+
+
+.container.py-4 {
+  padding-top: 60px !important;
+  padding-bottom: 60px !important;
+  padding-left: 24px !important;
+  padding-right: 24px !important;
+  max-width: 960px;
+}
+
+
+/* Header text tweaks */
+
+h1.mb-3 {
+  font-size: 2.4rem;
+  font-weight: 700;
+}
+
+p.text-muted {
+  color: var(--color-text-muted) !important;
+  font-size: 0.95rem;
+}
+
+/* Card styling */
+
+.card {
+  border-radius: var(--radius-card);
+  border: 1px solid var(--color-border-subtle);
+  box-shadow: var(--shadow-soft);
+  background-color: var(--color-surface);
+}
+
+.card-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+/* Progress bar */
+
+.progress {
+  background-color: var(--color-progress-track);
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+}
+
+.progress-bar {
+  background-color: var(--color-progress-fill);
+}
+
+
+/* ============================
+   NEXT BUTTON — Pill, Teal
+=============================== */
+.next-button {
+  background-color: #2f7e90;
+  border-color: #2f7e90;
+  color: #121212;
+  font-family: var(--font-headings);
+  font-weight: 600;
+  border-radius: 999px; /* identical pill geometry */
+  padding: 0.75rem 1.5rem;
+  transition: background-color 0.25s ease, color 0.25s ease;
+}
+
+.next-button:hover,
+.next-button:focus {
+  background-color: #f8c9c2;
+  border-color: #f8c9c2;
+  color: #ffffff;
+}
+
+
+/* ============================
+   BACK BUTTON — Small Pill
+   Same shape as next button
+=============================== */
+.back-button {
+  background: transparent;
+  border-radius: 999px;      /* exact same pill shape */
+  padding: 0.55rem 1.25rem;
+  font-size: 0.95rem;
+  color: rgba(18, 18, 18, 0.75);
+  border: 1px solid rgba(18, 18, 18, 0.25);
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.back-button:hover {
+  background: rgba(18, 18, 18, 0.85);
+  color: white;
+  border-color: rgba(18, 18, 18, 0.85);
+}
+
+
+
+
+
+/* Inputs */
+
+input.form-control {
+  font-family: var(--font-input);
+  border-radius: 10px;
+  border: 1px solid rgba(0, 0, 0, 0.10);
+  padding: 0.6rem 0.75rem;
+  font-size: 0.95rem;
+}
+
+input.form-control:focus {
+  border-color: var(--color-palette-black);
+  box-shadow: 0 0 0 1.5px rgba(0, 0, 0, 0.25);
+}
+
+/* Results tables */
+
+.table {
+  font-size: 0.9rem;
+}
+
+.badge.bg-success {
+  background-color: var(--color-success) !important;
+}
+
+.badge.bg-danger {
+  background-color: var(--color-danger) !important;
+}
+
+/* Muted small labels */
+
+small {
+  color: var(--color-text-muted);
+}
+
+/* Results visual */
+.calibration-wrapper {
+  max-width: 100%;
+}
+
+.calibration-bar {
+  position: relative;
+  height: 14px;
+  border-radius: 999px;
+  background-color: #e5e5e5; /* light gray */
+  overflow: hidden;
+}
+
+.calibration-fill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  border-radius: 999px;
+  background-color: #2f7e90; /* teal to match your theme */
+}
+
+.calibration-target {
+  position: absolute;
+  top: -3px;
+  bottom: -3px;
+  left: 95%;                 /* 95% target */
+  width: 2px;
+  background-color: #d9534f; /* red target line */
+}
+
+
+.no-subtitle .ci-subtitle {
+  display: none !important;
+}
+
+/* Reduce extra bottom space after results table */
+.results-table-wrapper {
+  margin-bottom: 20px !important;
+  padding-bottom: 0 !important;
+}
+
+/* Make footer sit naturally below content */
+.footer-logo {
+  text-align: center;
+  padding: 40px 0 40px;
+  opacity: 0.90;
+}
+
+.footer-logo img {
+  height: 80px;
+  width: auto;
+  display: inline-block;
+  filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.20));
+  transition: opacity 0.25s ease;
+}
+
+.footer-logo img:hover {
+  opacity: 1;
+}
+
+

@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block body_class %}no-subtitle{% endblock %}
+
+{% block content %}
+<div class="card mb-4">
+  <div class="card-body">
+
+    <h4 class="card-title mb-3">What is this?</h4>
+
+    <p class="lead">
+      This short quiz tests how well you understand a <strong>95% confidence interval</strong>.
+      For each question, you'll enter a <em>lower</em> and <em>upper</em> bound that you believe
+      has a 95% chance of containing the true (actual) answer.
+    </p>
+
+    <h4 class="card-title mb-3">What's the context?</h4>
+    <p>
+        The 95% confidence interval (CI) is the standard statistical tool for expressing uncertainty in scientific research. The 95% CI reflects the range within which the true value would fall in about 95 out of 100 repeated samples.</br></br>
+
+        Because humans are consistently overconfident, people tend to choose intervals that are far too narrow—a finding replicated across many areas of research.</br></br>
+
+        This quiz helps us calibrate just how wide a truly 95% interval must be and gives us a clearer sense of what genuine statistical confidence looks like in practice.</br></br>
+
+        In short, when a study reports a 95% CI, it means we can be <strong><em>pretty dang confident</em></strong> that the true value lies within that interval...
+    </p>
+
+    <h4 class="card-title mb-3">Can you give a quick and familiar example?</h4>
+    <p>
+        When Pfizer released the first large randomized trial results for the COVID-19 vaccine, they reported that the vaccine was 95% effective, a number based directly on a 95% confidence interval calculated from 170 confirmed cases in a 43,000-person trial.</br></br>
+
+        Source: CNBC — “Pfizer says final data analysis shows Covid vaccine is 95% effective” <a href="https://www.cnbc.com/2020/11/18/coronavirus-pfizer-vaccine-is-95percent-effective-plans-to-submit-to-fda-in-days.html" title="CNBC Article, 2020" target="_blank">https://www.cnbc.com/2020/11/18/coronavirus-pfizer-vaccine-is-95percent-effective-plans-to-submit-to-fda-in-days.html</a>
+    </p>
+
+    <div class="text-center mt-4">
+      <a href="{{ url_for('question', index=0) }}" class="btn btn-primary next-button">
+        Start the Quiz
+      </a>
+    </div>
+    <p class="disclaimer">Takes less than 10 minutes.</p>
+
+  </div>
+</div>
+{% endblock %}

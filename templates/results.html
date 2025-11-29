@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+
+{# add body class so we can hide the subtitle with CSS #}
+{% block body_class %}no-subtitle{% endblock %}
+
+{% block content %}
+  <div class="card mb-4">
+    <div class="card-body">
+      <h4 class="card-title mb-2">Your results</h4>
+      <p class="lead mb-1">
+        You captured the true value for
+        <strong>{{ format_number(correct_count) }} out of {{ format_number(total) }}</strong> questions
+        ({{ score_pct }}%).
+      </p>
+      <p>{{ interpretation }}</p>
+
+      <!-- Calibration bar: your score vs 95% target -->
+      <div class="calibration-wrapper my-3">
+        <div class="d-flex justify-content-between small text-muted mb-1">
+          <span>0%</span>
+          <span>Accuracy</span>
+          <span>100%</span>
+        </div>
+
+        <div class="calibration-bar">
+          <!-- fill up to your score -->
+          <div class="calibration-fill" style="width: {{ score_pct }}%;"></div>
+          <!-- red line at 95% target -->
+          <div class="calibration-target"></div>
+        </div>
+
+        <div class="d-flex justify-content-between small mt-1">
+          <span>Your score: <strong>{{ score_pct }}%</strong></span>
+          <span class="text-muted">
+            Target for a 95% confidence interval ≈ <strong>95%</strong>
+          </span>
+        </div>
+      </div>
+
+      <p class="mb-0">
+        Across all users so far, the average correctness rate is
+        <strong>{{ global_avg_correct_pct }}%</strong>
+        over <strong>{{ format_number(total_runs) }}</strong> completed quizzes.
+      </p>
+    </div>
+  </div>
+
+  <h5>Your intervals vs the true answers</h5>
+  <div class="table-responsive mb-4 results-table-wrapper">
+    <table class="table table-sm table-striped align-middle">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Question</th>
+          <th>Your interval</th>
+          <th>True value</th>
+          <th>Correct?</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in per_question_results %}
+          <tr>
+            <td>{{ loop.index }}</td>
+            <td>{{ r.text }}</td>
+            <td>
+              [{{ format_number(r.lower) }}, {{ format_number(r.upper) }}] {{ r.unit }}
+            </td>
+            <td>
+              {{ format_number(r.true_value) }} {{ r.unit }}
+            </td>
+            <td>
+              {% if r.is_correct %}
+                <span class="badge bg-success">Yes</span>
+              {% else %}
+                <span class="badge bg-danger">No</span>
+              {% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <h5>Question-level user averages</h5>
+  <div class="table-responsive mb-4 results-table-wrapper">
+    <table class="table table-sm table-bordered align-middle">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Question</th>
+          <th>% of users whose interval included the true value</th>
+          <th>Attempts</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in per_question_stats %}
+          <tr>
+            <td>{{ loop.index }}</td>
+            <td>{{ s.text }}</td>
+            <td>{{ s.correct_pct }}%</td>
+            <td>{{ format_number(s.attempts) }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <a href="{{ url_for('index') }}" class="btn btn-secondary">Try again</a>
+{% endblock %}

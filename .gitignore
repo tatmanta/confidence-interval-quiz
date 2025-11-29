@@ -50,6 +50,7 @@ coverage.xml
 .hypothesis/
 .pytest_cache/
 cover/
+*.pyc
 
 # Translations
 *.mo
@@ -133,6 +134,9 @@ celerybeat.pid
 
 # SageMath parsed files
 *.sage.py
+
+# macOS
+.DS_Store
 
 # Environments
 .env
