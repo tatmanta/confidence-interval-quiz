@@ -7,45 +7,71 @@ app = Flask(__name__)
 app.secret_key = "change-this-secret"  # replace with any random string
 
 
+# -----------------------------
+# Number parsing / formatting
+# -----------------------------
+
+_SHORTHAND_RE = re.compile(r"""^\s*([+-]?\d*\.?\d+)\s*([kKmMbBtT])?\s*$""")
+
+
 def parse_number(value: str):
     """
     Parse a human-entered number string such as:
-      '40,000,000', '40.5', '40,000,000.25', '.5', '42.'
-    into a float.
+      '40,000,000', '40.5', '40,000,000.25', '.5', '42.',
+      plus shorthand:
+      '10K', '10M', '3.2B', '1.2T' (case-insensitive).
 
     Returns float if valid, or None if invalid.
     """
     if value is None:
         return None
 
-    value = value.strip().replace(" ", "")
-    if value == "":
+    s = str(value).strip()
+    if s == "":
         return None
 
-    if value.startswith("."):
-        value = "0" + value
+    # Remove common separators (spaces/underscores). Keep commas for validation.
+    s = s.replace(" ", "").replace("_", "")
 
-    if value.endswith(".") and value.count(".") == 1:
-        value = value[:-1]
+    # Allow leading '.' (e.g., ".5")
+    if s.startswith("."):
+        s = "0" + s
 
-    if not re.fullmatch(r"[0-9,\.]+", value):
+    # Allow trailing '.' (e.g., "42.")
+    if s.endswith(".") and s.count(".") == 1:
+        s = s[:-1]
+
+    # Handle shorthand suffixes (K/M/B/T)
+    # We intentionally parse BEFORE comma validation so inputs like "10M" work.
+    shorthand_match = _SHORTHAND_RE.fullmatch(s.replace(",", ""))
+    if shorthand_match:
+        try:
+            num = float(shorthand_match.group(1))
+        except ValueError:
+            return None
+        suffix = (shorthand_match.group(2) or "").upper()
+        multipliers = {"K": 1e3, "M": 1e6, "B": 1e9, "T": 1e12}
+        return num * multipliers.get(suffix, 1.0)
+
+    # If not shorthand, validate numeric formatting with commas/decimals
+    if not re.fullmatch(r"[0-9,\.]+", s):
         return None
 
-    if ",," in value or ".." in value:
+    if ",," in s or ".." in s:
         return None
 
-    if value.startswith(",") or value.endswith(","):
+    if s.startswith(",") or s.endswith(","):
         return None
 
-    if value.count(".") > 1:
+    if s.count(".") > 1:
         return None
 
-    int_part, *rest = value.split(".")
+    int_part, *rest = s.split(".")
     if "," in int_part:
         if not re.fullmatch(r"\d{1,3}(,\d{3})*", int_part):
             return None
 
-    clean = value.replace(",", "")
+    clean = s.replace(",", "")
     try:
         return float(clean)
     except ValueError:
@@ -263,12 +289,17 @@ def question(index):
         raw_lower = request.form.get("lower", "").strip()
         raw_upper = request.form.get("upper", "").strip()
 
+        # Optional (sent by your updated question template)
+        unit_system = request.form.get("unit_system")
+        if unit_system in ("metric", "imperial"):
+            session["unit_system"] = unit_system
+
         lower = parse_number(raw_lower)
         upper = parse_number(raw_upper)
 
         # Invalid numeric format
         if lower is None or upper is None:
-            error = "Please enter valid numeric values (commas and decimals allowed)."
+            error = "Please enter valid numeric values (commas, decimals, and shorthand like 10M or 3.2B are allowed)."
             return render_template(
                 "question.html",
                 question=q,
@@ -417,7 +448,6 @@ def results():
             }
         )
 
-    # FINAL return – always reached if we didn't redirect above
     return render_template(
         "results.html",
         total=TOTAL_QUESTIONS,
@@ -430,115 +460,7 @@ def results():
         per_question_stats=per_question_stats,
         format_number=format_number,
     )
-    answers = session.get("answers")
-    if not answers or len(answers) != TOTAL_QUESTIONS:
-        return redirect(url_for("index"))
 
-    per_question_results = []
-    correct_count = 0
-
-    # Build per-question results and compute score
-    for q in QUESTIONS:
-        qid = q["id"]
-        user_ans = answers.get(qid)
-        true_value = q["true_value"]
-
-        lower = user_ans["lower"]
-        upper = user_ans["upper"]
-        is_correct = lower <= true_value <= upper
-        if is_correct:
-            correct_count += 1
-
-        per_question_results.append(
-            {
-                "id": qid,
-                "text": q["text"],
-                "unit": q["unit"],
-                "lower": lower,
-                "upper": upper,
-                "true_value": true_value,
-                "is_correct": is_correct,
-            }
-        )
-
-    # Overall accuracy for this run
-    score_pct = round((correct_count / TOTAL_QUESTIONS) * 100, 1)
-
-    # Interpretation text
-    if score_pct < 60:
-        interpretation = (
-            "Your intervals were too narrow: they behaved more like a low confidence level "
-            "than 95%. This suggests strong overconfidence."
-        )
-    elif score_pct < 80:
-        interpretation = (
-            "Your intervals were still too narrow. You captured the true value less often "
-            "than you would at 95% confidence."
-        )
-    elif score_pct < 95:
-        interpretation = (
-            "You’re getting closer to well-calibrated ranges, but still a bit overconfident "
-            "compared with a true 95% confidence interval."
-        )
-    elif score_pct == 100:
-        interpretation = (
-            "You included the true value for every question. That means your intervals were "
-            "closer to 100% confidence, i.e., wider than necessary for 95%."
-        )
-    else:
-        interpretation = "Interesting result."
-
-    # Load existing stats from disk
-    stats = load_stats()
-
-    # Only update stats ONCE per completed quiz
-    if not session.get("stats_saved", False):
-        stats["total_runs"] += 1
-        stats["total_correct"] += correct_count
-
-        for result in per_question_results:
-            qid = result["id"]
-            stats["per_question"][qid]["attempts"] += 1
-            if result["is_correct"]:
-                stats["per_question"][qid]["correct"] += 1
-
-        save_stats(stats)
-        session["stats_saved"] = True
-
-    # Compute global and per-question averages
-    global_avg_correct_pct = round(
-        (stats["total_correct"] / (stats["total_runs"] * TOTAL_QUESTIONS)) * 100, 1
-    )
-
-    per_question_stats = []
-    for q in QUESTIONS:
-        qid = q["id"]
-        s = stats["per_question"][qid]
-        if s["attempts"] > 0:
-            correct_pct = round((s["correct"] / s["attempts"]) * 100, 1)
-        else:
-            correct_pct = 0.0
-        per_question_stats.append(
-            {
-                "id": qid,
-                "text": q["text"],
-                "correct_pct": correct_pct,
-                "attempts": s["attempts"],
-            }
-        )
-
-    return render_template(
-        "results.html",
-        total=TOTAL_QUESTIONS,
-        correct_count=correct_count,
-        score_pct=score_pct,
-        interpretation=interpretation,
-        per_question_results=per_question_results,
-        global_avg_correct_pct=global_avg_correct_pct,
-        total_runs=stats["total_runs"],
-        per_question_stats=per_question_stats,
-        format_number=format_number,
-    )
 
 if __name__ == "__main__":
     app.run(debug=True)
