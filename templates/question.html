@@ -28,7 +28,16 @@
 =============================== -->
 <div class="card">
   <div class="card-body">
-    <h5 class="card-title">{{ question.text }}</h5>
+
+    {# question.text should be BASE TEXT (no units baked in) #}
+    <h5
+      class="card-title"
+      id="questionTitle"
+      data-base-text="{{ question.text|e }}"
+      data-unit-kind="{{ question.unit_kind|default('')|e }}"
+    >
+      {{ question.text }}
+    </h5>
 
     <form method="post" class="mt-3">
 
@@ -38,7 +47,13 @@
       <div class="d-flex justify-content-end mb-2">
         <div class="d-flex align-items-center gap-2">
           <small class="text-muted">Units</small>
-          <select id="unitSystem" class="form-select form-select-sm" style="width:auto;">
+
+          <select
+            id="unitSystem"
+            class="form-select form-select-sm"
+            style="width:auto;"
+            data-default="{{ default_unit_system|default('imperial') }}"
+          >
             <option value="metric">Metric</option>
             <option value="imperial">US / Imperial</option>
           </select>
@@ -84,7 +99,6 @@
           >
         </div>
 
-        <!-- FULL-WIDTH NEXT BUTTON in remaining column -->
         <div class="col-md-4 d-flex justify-content-end">
           <button type="submit" class="btn next-button w-100">
             {% if index + 1 == total %}See results{% else %}Next{% endif %}
@@ -103,7 +117,7 @@
       {% endif %}
 
       <!-- ============================
-           BACK BUTTON (PILL, SMALLER)
+           BACK BUTTON
       =============================== -->
       <div class="mt-4">
         {% if index > 0 %}
@@ -114,32 +128,93 @@
       </div>
 
       <!-- ============================
-           SYNC UNIT STATE + OPTIONAL CONVERSION
+           UNITS: persist + title suffix + optional conversion
       =============================== -->
       <script>
         document.addEventListener("DOMContentLoaded", () => {
           const unitSelect = document.getElementById("unitSystem");
           const unitHidden = document.getElementById("unit_system");
           const kindEl = document.getElementById("unit_kind");
+          const titleEl = document.getElementById("questionTitle");
           const lower = document.getElementById("lower");
           const upper = document.getElementById("upper");
 
-          if (!unitSelect || !unitHidden) return;
+          if (!unitSelect || !unitHidden || !titleEl) return;
 
-          // Ensure hidden field matches current selection on load
+          // 1) Choose unit system on load:
+          //    - user preference (localStorage) wins
+          //    - else server default (geo-ish) wins
+          //    - else imperial fallback
+          const saved = localStorage.getItem("ci_unitSystem");
+          const serverDefault = unitSelect.dataset.default;
+
+          if (saved === "metric" || saved === "imperial") {
+            unitSelect.value = saved;
+          } else if (serverDefault === "metric" || serverDefault === "imperial") {
+            unitSelect.value = serverDefault;
+          } else {
+            unitSelect.value = "imperial";
+          }
+
+          // Keep hidden in sync (server reads this on POST)
           unitHidden.value = unitSelect.value;
 
+          // 2) Map unit kinds to readable labels per system
+          //    IMPORTANT: these keys must match question.unit_kind values in your question bank.
+          const UNIT_SUFFIX = {
+            // heights/lengths
+            height:   { metric: "in centimeters", imperial: "in inches" },
+            length:   { metric: "in centimeters", imperial: "in inches" },
+
+            // distances
+            distance: { metric: "in kilometers",  imperial: "in miles"  },
+
+            // weights
+            weight:   { metric: "in kilograms",   imperial: "in pounds" },
+
+            // temps
+            temp:     { metric: "in °C",          imperial: "in °F"     }
+          };
+
+          function updateQuestionTitle() {
+            const base = titleEl.dataset.baseText || "";
+            const kind = titleEl.dataset.unitKind || "";
+            const system = unitSelect.value;
+
+            const suffix = (kind && UNIT_SUFFIX[kind] && UNIT_SUFFIX[kind][system])
+              ? UNIT_SUFFIX[kind][system]
+              : "";
+
+            titleEl.textContent = suffix ? `${base} (${suffix})` : base;
+          }
+
+          updateQuestionTitle();
+
+          // 3) On change:
+          //    - persist preference for next questions
+          //    - update title
+          //    - optionally convert existing inputs if functions exist
           unitSelect.addEventListener("change", () => {
             const prev = unitHidden.value;
             const next = unitSelect.value;
+
+            localStorage.setItem("ci_unitSystem", next);
             unitHidden.value = next;
 
-            // If no per-question unit kind exists, just store preference and stop.
+            updateQuestionTitle();
+
+            // Optional conversion only if you have unit_kind AND conversion helpers exist
             if (!kindEl) return;
 
             const kind = kindEl.value;
 
-            // Convert current inputs if parseable (handles commas + K/M/B/T)
+            // Guard if conversion helpers aren't present
+            if (typeof parseShorthandNumber !== "function" ||
+                typeof convertValue !== "function" ||
+                typeof formatWithSeparators !== "function") {
+              return;
+            }
+
             const l = parseShorthandNumber(lower.value);
             const u = parseShorthandNumber(upper.value);
 

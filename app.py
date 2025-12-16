@@ -6,7 +6,6 @@ import re
 app = Flask(__name__)
 app.secret_key = "change-this-secret"  # replace with any random string
 
-
 # -----------------------------
 # Number parsing / formatting
 # -----------------------------
@@ -42,7 +41,6 @@ def parse_number(value: str):
         s = s[:-1]
 
     # Handle shorthand suffixes (K/M/B/T)
-    # We intentionally parse BEFORE comma validation so inputs like "10M" work.
     shorthand_match = _SHORTHAND_RE.fullmatch(s.replace(",", ""))
     if shorthand_match:
         try:
@@ -79,9 +77,7 @@ def parse_number(value: str):
 
 
 def format_number(value):
-    """
-    Format a number with commas and minimal decimals.
-    """
+    """Format a number with commas and minimal decimals."""
     if value is None:
         return ""
 
@@ -92,43 +88,76 @@ def format_number(value):
 
     if num.is_integer():
         return f"{int(num):,}"
-    else:
-        s = f"{num:,.4f}"
-        s = s.rstrip("0").rstrip(".")
-        return s
+    s = f"{num:,.4f}".rstrip("0").rstrip(".")
+    return s
 
 
-# --- Question data (20 questions) ---
+# -----------------------------
+# Geo-ish default units (IP/country-ish)
+# -----------------------------
+
+def infer_default_unit_system(req) -> str | None:
+    """
+    Returns 'imperial' or 'metric' or None.
+    Priority:
+      1) Cloudflare country header (if present): CF-IPCountry
+      2) Accept-Language heuristic (no IP needed)
+    """
+    # 1) Cloudflare (if you use it)
+    cf_country = (req.headers.get("CF-IPCountry") or "").upper()
+    if cf_country:
+        return "imperial" if cf_country == "US" else "metric"
+
+    # 2) Accept-Language (fallback)
+    langs = [lang for (lang, _q) in req.accept_languages]
+    blob = ",".join(langs).lower()
+    if "en-us" in blob:
+        return "imperial"
+    return "metric"
+
+
+# -----------------------------
+# Questions
+# IMPORTANT: remove unit text from question.text for any question using unit toggle.
+# Add unit_kind for questions where you want the title suffix to switch.
+# unit_kind must match what your question.html JS expects (e.g., height, length, distance, weight, temp).
+# -----------------------------
+
 QUESTIONS = [
     {
         "id": "q1",
         "text": "Distance from Earth to the nearest star (excluding the Sun), in light-years",
         "true_value": 4.2441,
         "unit": "light-years",
+        # no toggle here; leave as-is
     },
     {
         "id": "q2",
         "text": "GDP of Mongolia, in USD",
         "true_value": 13_637_000_000,
         "unit": "USD",
+        # no toggle here; leave as-is
     },
     {
         "id": "q3",
-        "text": "Height of tallest man in recorded history, in inches",
-        "true_value": 107,
+        "text": "Height of tallest man in recorded history",
+        "true_value": 107,  # inches
         "unit": "inches",
+        "unit_kind": "height",
     },
     {
         "id": "q4",
-        "text": "Depth of deepest part of Pacific Ocean, in meters",
-        "true_value": 10_984,
+        "text": "Depth of deepest part of Pacific Ocean",
+        "true_value": 10_984,  # meters
         "unit": "meters",
+        "unit_kind": "length",
     },
     {
         "id": "q5",
-        "text": "Average distance from Earth to the Moon, in miles",
-        "true_value": 237_674.5,
+        "text": "Average distance from Earth to the Moon",
+        "true_value": 237_674.5,  # miles
         "unit": "miles",
+        "unit_kind": "distance",
     },
     {
         "id": "q6",
@@ -156,9 +185,10 @@ QUESTIONS = [
     },
     {
         "id": "q10",
-        "text": "Fastest lap time in an F1 car around the Monaco circuit, in seconds",
-        "true_value": 74.260,  # 1:14.260
+        "text": "Fastest lap time in an F1 car around the Monaco circuit",
+        "true_value": 74.260,  # seconds (1:14.260)
         "unit": "seconds",
+        "unit_kind": "length",  # NOTE: if you want time-based suffixes, use unit_kind="time" and add mapping in question.html JS
     },
     {
         "id": "q11",
@@ -192,9 +222,10 @@ QUESTIONS = [
     },
     {
         "id": "q16",
-        "text": "Amount of coal produced by U.S. mines in 2019, in pounds",
-        "true_value": 1_410_518_000_000,
+        "text": "Amount of coal produced by U.S. mines in 2019",
+        "true_value": 1_410_518_000_000,  # pounds
         "unit": "pounds",
+        "unit_kind": "weight",
     },
     {
         "id": "q17",
@@ -210,9 +241,10 @@ QUESTIONS = [
     },
     {
         "id": "q19",
-        "text": "Full weight (including planes, ammunition, people) of a Nimitz-class aircraft carrier, in pounds",
-        "true_value": 226_679_700,
+        "text": "Full weight (including planes, ammunition, people) of a Nimitz-class aircraft carrier",
+        "true_value": 226_679_700,  # pounds
         "unit": "pounds",
+        "unit_kind": "weight",
     },
     {
         "id": "q20",
@@ -237,19 +269,14 @@ def load_stats():
     else:
         data = {}
 
-    if "total_runs" not in data:
-        data["total_runs"] = 0
-    if "total_correct" not in data:
-        data["total_correct"] = 0
-    if "per_question" not in data:
-        data["per_question"] = {}
-    if "history" not in data:
-        data["history"] = []
+    data.setdefault("total_runs", 0)
+    data.setdefault("total_correct", 0)
+    data.setdefault("per_question", {})
+    data.setdefault("history", [])
 
     for q in QUESTIONS:
         qid = q["id"]
-        if qid not in data["per_question"]:
-            data["per_question"][qid] = {"attempts": 0, "correct": 0}
+        data["per_question"].setdefault(qid, {"attempts": 0, "correct": 0})
 
     return data
 
@@ -266,7 +293,6 @@ def intro():
 
 @app.route("/")
 def index():
-    # Go to intro page instead of starting the quiz
     return redirect(url_for("intro"))
 
 
@@ -285,11 +311,17 @@ def question(index):
     q = QUESTIONS[index]
     progress = int(index / TOTAL_QUESTIONS * 100)
 
+    # Choose default unit system for THIS render:
+    # 1) session preference (set from prior POSTs)
+    # 2) infer from request (cloudflare/accept-language)
+    # 3) fallback
+    default_unit_system = session.get("unit_system") or infer_default_unit_system(request) or "imperial"
+
     if request.method == "POST":
         raw_lower = request.form.get("lower", "").strip()
         raw_upper = request.form.get("upper", "").strip()
 
-        # Optional (sent by your updated question template)
+        # Posted by template
         unit_system = request.form.get("unit_system")
         if unit_system in ("metric", "imperial"):
             session["unit_system"] = unit_system
@@ -309,6 +341,7 @@ def question(index):
                 error=error,
                 lower_value=raw_lower,
                 upper_value=raw_upper,
+                default_unit_system=default_unit_system,
             )
 
         # Logical check: lower must not exceed upper
@@ -323,6 +356,7 @@ def question(index):
                 error=error,
                 lower_value=raw_lower,
                 upper_value=raw_upper,
+                default_unit_system=default_unit_system,
             )
 
         # Save valid answer in session
@@ -333,8 +367,7 @@ def question(index):
         # Move to next question or results
         if index + 1 < TOTAL_QUESTIONS:
             return redirect(url_for("question", index=index + 1))
-        else:
-            return redirect(url_for("results"))
+        return redirect(url_for("results"))
 
     # GET request: render the question form
     return render_template(
@@ -346,6 +379,7 @@ def question(index):
         error=None,
         lower_value="",
         upper_value="",
+        default_unit_system=default_unit_system,
     )
 
 
@@ -358,7 +392,6 @@ def results():
     per_question_results = []
     correct_count = 0
 
-    # Build per-question results and compute score
     for q in QUESTIONS:
         qid = q["id"]
         user_ans = answers.get(qid)
@@ -374,7 +407,7 @@ def results():
             {
                 "id": qid,
                 "text": q["text"],
-                "unit": q["unit"],
+                "unit": q.get("unit", ""),
                 "lower": lower,
                 "upper": upper,
                 "true_value": true_value,
@@ -382,10 +415,8 @@ def results():
             }
         )
 
-    # Overall accuracy for this run
     score_pct = round((correct_count / TOTAL_QUESTIONS) * 100, 1)
 
-    # Interpretation text
     if score_pct < 60:
         interpretation = (
             "Your intervals were too narrow: they behaved more like a low confidence level "
@@ -409,10 +440,8 @@ def results():
     else:
         interpretation = "Interesting result."
 
-    # Load existing stats from disk
     stats = load_stats()
 
-    # Only update stats ONCE per completed quiz
     if not session.get("stats_saved", False):
         stats["total_runs"] += 1
         stats["total_correct"] += correct_count
@@ -426,7 +455,6 @@ def results():
         save_stats(stats)
         session["stats_saved"] = True
 
-    # Compute global and per-question averages
     global_avg_correct_pct = round(
         (stats["total_correct"] / (stats["total_runs"] * TOTAL_QUESTIONS)) * 100, 1
     )
@@ -435,17 +463,9 @@ def results():
     for q in QUESTIONS:
         qid = q["id"]
         s = stats["per_question"][qid]
-        if s["attempts"] > 0:
-            correct_pct = round((s["correct"] / s["attempts"]) * 100, 1)
-        else:
-            correct_pct = 0.0
+        correct_pct = round((s["correct"] / s["attempts"]) * 100, 1) if s["attempts"] > 0 else 0.0
         per_question_stats.append(
-            {
-                "id": qid,
-                "text": q["text"],
-                "correct_pct": correct_pct,
-                "attempts": s["attempts"],
-            }
+            {"id": qid, "text": q["text"], "correct_pct": correct_pct, "attempts": s["attempts"]}
         )
 
     return render_template(
