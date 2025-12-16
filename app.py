@@ -185,7 +185,7 @@ QUESTIONS = [
     },
     {
     "id": "q10",
-    "text": "Fastest lap time in an F1 car around the Monaco circuit",
+    "text": "Fastest lap time in an F1 car around the Monaco circuit, in seconds",
     "true_value": 74.260,  # seconds
     "unit": "seconds",
     "unit_kind": "time",
