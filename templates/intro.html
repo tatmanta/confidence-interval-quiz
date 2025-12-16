@@ -1,3 +1,4 @@
+intro.html
 {% extends "base.html" %}
 
 {% block body_class %}no-subtitle{% endblock %}
@@ -14,7 +15,7 @@
     </p>
 
     <p>
-      <bold>Note:</bold> This quiz tests human calibration and overconfidence—not your ability to calculate statistical confidence intervals from data. Designed and inspired by <a href="https://peterattiamd.com/confidence/" target="_blank">Peter Attia, MD</a>.
+      <strong>Note:</strong> This quiz tests human calibration and overconfidence—not your ability to calculate statistical confidence intervals from data. Designed and inspired by <a href="https://peterattiamd.com/confidence/" target="_blank" rel="noopener">Peter Attia, MD</a>.
     </p>
 
     <!-- Linked section titles -->
@@ -36,7 +37,7 @@
       <h4 class="card-title mb-0">
         <a href="#" class="text-decoration-none"
            data-bs-toggle="modal" data-bs-target="#exampleModal">
-          A real-world example
+          Real-world examples
         </a>
       </h4>
     </div>
@@ -140,12 +141,12 @@
   </div>
 </div>
 
-<!-- Modal: A real-world example -->
+<!-- Modal: Real-world examples -->
 <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-lg modal-dialog-scrollable">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="exampleModalLabel">A real-world example</h5>
+        <h5 class="modal-title" id="exampleModalLabel">Real-world examples</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body">
@@ -154,29 +155,42 @@
         </p>
 
         <p>
-          Some exposures produce effects so large they’re hard to miss. Others show small associations
-          where confidence intervals—and stronger study designs—suggest confounding rather than causation.
+          Some exposures produce effects so large they’re hard to miss. Others show small associations where the confidence interval—and stronger study designs—suggest confounding rather than causation.
         </p>
 
         <p>
           <strong>Smoking → lung cancer</strong><br>
-          Current smokers have roughly 21× higher lung-cancer mortality than never-smokers (RR ≈ 21.4, 95% CI [19.7, 23.2]; Doll et al., 2004).
+          Current smokers have roughly <strong>21×</strong> higher lung-cancer mortality than never-smokers <em>(RR ≈ 21.4, 95% CI [19.7, 23.2]; Doll et al., 2004).</em>
         </p>
 
         <p>
           <strong>Acetaminophen in pregnancy → autism</strong><br>
-          Population models show a ~5% higher hazard
-          (HR 1.05, 95% CI [1.02, 1.08]), but sibling-comparison analyses eliminate the association
-          (HR 0.98, 95% CI [0.93, 1.04]), suggesting the initial signal is likely due to confounding rather than a causal effect (Lee et al., 2021).
+          Population models show a small association <em>(HR 1.05, 95% CI [1.02, 1.08])</em>, but <strong>sibling-comparison analyses</strong> eliminate it <em>(HR 0.98, 95% CI [0.93, 1.04])</em>, suggesting the initial “signal” is likely <strong>confounding rather than causation</strong> <em>(Ahlqvist et al., 2024; <a href="#ref-acog">ACOG</a>).</em>
         </p>
 
         <p>
-          The confidence intervals—and where they sit relative to “no effect”—are what make this difference visible.
+          The confidence intervals—and where they sit relative to “no effect” (1.0)—are what make this difference visible.
         </p>
 
         <p>
           This quiz is a small step toward reading evidence the way scientists intend it to be read.
         </p>
+
+        <div class="mt-3 small text-muted">
+          <div class="fw-semibold mb-2">References (APA)</div>
+
+          <p class="mb-2">
+            Ahlqvist, H., (et al.). (2024). <em>Acetaminophen use during pregnancy and children’s risk of autism, ADHD, and intellectual disability: A nationwide cohort study.</em> <strong>JAMA</strong>.
+          </p>
+
+          <p class="mb-0">
+            Doll, R., Peto, R., Boreham, J., &amp; Sutherland, I. (2004). Mortality in relation to smoking: 50 years’ observations on male British doctors. <em>BMJ, 328</em>(7455), 1519. <a href="https://doi.org/10.1136/bmj.38142.554479.AE" target="_blank" rel="noopener">https://doi.org/10.1136/bmj.38142.554479.AE</a>
+          </p>
+
+          <p class="mt-2 mb-0" id="ref-acog">
+            ACOG. (2025). <em>Acetaminophen use in pregnancy and neurodevelopmental outcomes</em>. <a href="https://www.acog.org/clinical/clinical-guidance/practice-advisory/articles/2025/09/acetaminophen-use-in-pregnancy-and-neurodevelopmental-outcomes" target="_blank" rel="noopener">Practice Advisory</a>.
+          </p>
+        </div>
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
