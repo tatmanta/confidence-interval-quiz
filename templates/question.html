@@ -33,6 +33,25 @@
     <form method="post" class="mt-3">
 
       <!-- ============================
+           UNITS TOGGLE
+      =============================== -->
+      <div class="d-flex justify-content-end mb-2">
+        <div class="d-flex align-items-center gap-2">
+          <small class="text-muted">Units</small>
+          <select id="unitSystem" class="form-select form-select-sm" style="width:auto;">
+            <option value="metric">Metric</option>
+            <option value="imperial">US / Imperial</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Posted with form (server can use it) -->
+      <input type="hidden" id="unit_system" name="unit_system" value="">
+      {% if question.unit_kind %}
+        <input type="hidden" id="unit_kind" name="unit_kind" value="{{ question.unit_kind }}">
+      {% endif %}
+
+      <!-- ============================
            INPUT FIELDS + NEXT BUTTON
       =============================== -->
       <div class="row g-4 align-items-end">
@@ -41,10 +60,12 @@
           <label for="lower" class="form-label">Lower bound</label>
           <input
             type="text"
+            inputmode="decimal"
             class="form-control"
             id="lower"
             name="lower"
             value="{{ lower_value }}"
+            placeholder="e.g., 12,000 or 10M"
             required
           >
         </div>
@@ -53,10 +74,12 @@
           <label for="upper" class="form-label">Upper bound</label>
           <input
             type="text"
+            inputmode="decimal"
             class="form-control"
             id="upper"
             name="upper"
             value="{{ upper_value }}"
+            placeholder="e.g., 25,000 or 3.2B"
             required
           >
         </div>
@@ -89,6 +112,48 @@
           </a>
         {% endif %}
       </div>
+
+      <!-- ============================
+           SYNC UNIT STATE + OPTIONAL CONVERSION
+      =============================== -->
+      <script>
+        document.addEventListener("DOMContentLoaded", () => {
+          const unitSelect = document.getElementById("unitSystem");
+          const unitHidden = document.getElementById("unit_system");
+          const kindEl = document.getElementById("unit_kind");
+          const lower = document.getElementById("lower");
+          const upper = document.getElementById("upper");
+
+          if (!unitSelect || !unitHidden) return;
+
+          // Ensure hidden field matches current selection on load
+          unitHidden.value = unitSelect.value;
+
+          unitSelect.addEventListener("change", () => {
+            const prev = unitHidden.value;
+            const next = unitSelect.value;
+            unitHidden.value = next;
+
+            // If no per-question unit kind exists, just store preference and stop.
+            if (!kindEl) return;
+
+            const kind = kindEl.value;
+
+            // Convert current inputs if parseable (handles commas + K/M/B/T)
+            const l = parseShorthandNumber(lower.value);
+            const u = parseShorthandNumber(upper.value);
+
+            if (l != null) {
+              const converted = convertValue(l, kind, prev, next);
+              if (converted != null) lower.value = formatWithSeparators(String(converted));
+            }
+            if (u != null) {
+              const converted = convertValue(u, kind, prev, next);
+              if (converted != null) upper.value = formatWithSeparators(String(converted));
+            }
+          });
+        });
+      </script>
 
     </form>
   </div>

@@ -20,7 +20,7 @@
 
   <body class="bg-light {% block body_class %}{% endblock %}">
     <div class="container py-4">
-      <h1 class="mb-3">95% Confidence Interval Quiz</h1>
+      <h1 class="mb-3">Do you understand what a "95% confidence interval" means?</h1>
 
       <!-- Subtitle we want hidden on results page -->
       <p class="text-muted ci-subtitle">
@@ -48,5 +48,153 @@
       integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
       crossorigin="anonymous"
     ></script>
+
+    <!-- CI Quiz: Units defaulting + shorthand parsing + live separators -->
+    <script>
+      // ---------- Units preference (default + persistence) ----------
+      function detectDefaultUnitSystem() {
+        // Default to metric unless strong signal otherwise.
+        try {
+          const locale = Intl.NumberFormat().resolvedOptions().locale || navigator.language || "en-US";
+          const region = (typeof Intl.Locale === "function")
+            ? (new Intl.Locale(locale).region || "")
+            : (locale.split("-")[1] || "").toUpperCase();
+
+          // Common non-metric defaults
+          if (region === "US" || region === "LR" || region === "MM") return "imperial";
+          return "metric";
+        } catch (e) {
+          return "metric";
+        }
+      }
+
+      function getUnitSystem() {
+        return localStorage.getItem("ciq_unit_system") || detectDefaultUnitSystem();
+      }
+
+      function setUnitSystem(value) {
+        localStorage.setItem("ciq_unit_system", value);
+      }
+
+      // ---------- Parse numbers (commas, spaces, shorthand K/M/B/T) ----------
+      // Accepts: "12000", "12,000", "12 000", "10M", "3.2B", "5k", "1.2t"
+      // Returns: Number or null
+      function parseShorthandNumber(raw) {
+        if (raw == null) return null;
+        let s = String(raw).trim();
+        if (!s) return null;
+
+        // normalize separators
+        s = s.replace(/[_\s,]/g, "");
+
+        // optional suffix
+        const match = s.match(/^([+-]?\d*\.?\d+)([kKmMbBtT])?$/);
+        if (!match) return null;
+
+        const num = Number(match[1]);
+        if (!Number.isFinite(num)) return null;
+
+        const suffix = (match[2] || "").toUpperCase();
+        const multipliers = { "K": 1e3, "M": 1e6, "B": 1e9, "T": 1e12 };
+        return num * (multipliers[suffix] || 1);
+      }
+
+      // ---------- Format with thousands separators ----------
+      function formatWithSeparators(raw) {
+        if (raw == null) return "";
+        let s = String(raw);
+
+        // If ends with shorthand suffix, don't fight the user mid-entry
+        if (/[kKmMbBtT]$/.test(s.trim())) return s;
+
+        const hasTrailingDot = /\.$/.test(s);
+        const cleaned = s.replace(/[_\s,]/g, "");
+        const parts = cleaned.split(".");
+        let intPart = parts[0];
+        const fracPart = parts.length > 1 ? parts[1] : null;
+
+        // keep sign
+        const sign = intPart.startsWith("-") ? "-" : (intPart.startsWith("+") ? "+" : "");
+        intPart = intPart.replace(/^[+-]/, "").replace(/[^\d]/g, "");
+
+        if (!intPart) return s;
+
+        const formattedInt = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+
+        if (fracPart != null) {
+          const cleanedFrac = String(fracPart).replace(/[^\d]/g, "");
+          return `${sign}${formattedInt}.${cleanedFrac}`;
+        }
+        if (hasTrailingDot) return `${sign}${formattedInt}.`;
+        return `${sign}${formattedInt}`;
+      }
+
+      // Live formatting while typing (caret tries to stay sensible)
+      function attachLiveNumberFormatting(inputEl) {
+        inputEl.addEventListener("input", () => {
+          const start = inputEl.selectionStart || inputEl.value.length;
+          const before = inputEl.value;
+          const after = formatWithSeparators(before);
+          if (after === before) return;
+
+          inputEl.value = after;
+
+          // basic caret adjustment
+          const delta = after.length - before.length;
+          const newPos = Math.max(0, start + delta);
+          inputEl.setSelectionRange(newPos, newPos);
+        });
+
+        // On blur: if shorthand, normalize to expanded number w/ commas
+        inputEl.addEventListener("blur", () => {
+          const val = inputEl.value.trim();
+          const parsed = parseShorthandNumber(val);
+          if (parsed == null) return;
+          inputEl.value = formatWithSeparators(String(parsed));
+        });
+      }
+
+      // ---------- Optional unit conversions ----------
+      // Only meaningful if each question declares a unit kind.
+      function convertValue(value, unitKind, fromSystem, toSystem) {
+        const v = Number(value);
+        if (!Number.isFinite(v)) return null;
+        if (fromSystem === toSystem) return v;
+
+        // distance: km <-> miles
+        if (unitKind === "distance_km_mi") {
+          return (fromSystem === "metric") ? (v * 0.621371) : (v / 0.621371);
+        }
+
+        // weight: kg <-> lb
+        if (unitKind === "weight_kg_lb") {
+          return (fromSystem === "metric") ? (v * 2.20462) : (v / 2.20462);
+        }
+
+        // temperature: C <-> F
+        if (unitKind === "temp_c_f") {
+          return (fromSystem === "metric") ? (v * 9/5 + 32) : ((v - 32) * 5/9);
+        }
+
+        // unknown kind: no conversion
+        return v;
+      }
+
+      // ---------- Page bootstrapping ----------
+      document.addEventListener("DOMContentLoaded", () => {
+        // If a units dropdown exists on a page, set its default + persist changes.
+        const unitSelect = document.getElementById("unitSystem");
+        if (unitSelect) {
+          unitSelect.value = getUnitSystem();
+          unitSelect.addEventListener("change", () => setUnitSystem(unitSelect.value));
+        }
+
+        // If bound inputs exist on a page, apply formatting.
+        const lower = document.getElementById("lower");
+        const upper = document.getElementById("upper");
+        if (lower) attachLiveNumberFormatting(lower);
+        if (upper) attachLiveNumberFormatting(upper);
+      });
+    </script>
   </body>
 </html>
