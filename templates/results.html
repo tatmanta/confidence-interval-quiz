@@ -24,51 +24,58 @@
       Instead, your ranges behaved like a <strong>~{{ score_pct }}% coverage procedure</strong>.
     </p>
 
-    <h5 class="card-title mb-2">What this means</h5>
-    <p class="mb-2">
-      You likely intended to give wide, cautious ranges. In practice, those ranges were
-      <strong>narrower than the uncertainty justified</strong>.
-    </p>
-    <p class="mb-3">
-      This gap between intended confidence and actual coverage is common—even among experts.
-    </p>
-
-    <h5 class="card-title mb-2">
-      <a href="#" class="text-decoration-none"
-         data-bs-toggle="modal" data-bs-target="#whatThisIsModal">
-        What this is (and isn’t)
-      </a>
-    </h5>
-
-    <!-- Calibration bar: your score vs 95% target -->
-    <div class="calibration-wrapper my-3">
+    <!-- Coverage visual: your score vs 95% target -->
+    <div class="calibration-wrapper my-3" aria-label="Coverage score visual">
       <div class="d-flex justify-content-between small text-muted mb-1">
         <span>0%</span>
-        <span>Accuracy</span>
+        <span>Coverage</span>
         <span>100%</span>
       </div>
 
-      <div class="calibration-bar">
-        <!-- fill up to your score -->
+      <div class="calibration-bar position-relative">
+        <!-- Fill to your score -->
         <div class="calibration-fill" style="width: {{ score_pct }}%;"></div>
-        <!-- red line at 95% target -->
+
+        <!-- Midpoint tick (50%) -->
+        <div class="calibration-mid"></div>
+
+        <!-- Target tick (95%) -->
         <div class="calibration-target"></div>
       </div>
 
       <div class="d-flex justify-content-between small mt-1">
         <span>Your score: <strong>{{ score_pct }}%</strong></span>
-        <span class="text-muted">
-          Target ≈ <strong>95%</strong>
-        </span>
+        <span class="text-muted">Target: <strong>95%</strong></span>
       </div>
+
+      <p class="text-muted small mb-0 mt-2">
+        This bar shows how often your ranges captured the truth (coverage), compared with a 95% target.
+      </p>
     </div>
 
-    <h5 class="card-title mb-2">A pattern worth noticing</h5>
-    <p class="mb-0">
-      People tend to do well on familiar, everyday quantities. They struggle when values span
-      <strong>orders of magnitude</strong>—GDPs, global totals, long timelines—where uncertainty is better represented on a
-      <strong>log scale</strong>, not a linear one.
-    </p>
+    <!-- Linked section titles (match intro popup style) -->
+    <div class="mt-3">
+      <h5 class="card-title mb-2">
+        <a href="#" class="text-decoration-none"
+           data-bs-toggle="modal" data-bs-target="#whatThisMeansModal">
+          What this means
+        </a>
+      </h5>
+
+      <h5 class="card-title mb-2">
+        <a href="#" class="text-decoration-none"
+           data-bs-toggle="modal" data-bs-target="#whatThisIsModal">
+          What this is (and isn’t)
+        </a>
+      </h5>
+
+      <h5 class="card-title mb-0">
+        <a href="#" class="text-decoration-none"
+           data-bs-toggle="modal" data-bs-target="#patternModal">
+          A pattern worth noticing
+        </a>
+      </h5>
+    </div>
 
   </div>
 </div>
@@ -154,6 +161,32 @@
 
 <a href="{{ url_for('index') }}" class="btn btn-secondary">Try again</a>
 
+{# --- Modals (match intro: ci-modal, modal-lg, scrollable) --- #}
+
+<!-- Modal: What this means -->
+<div class="modal fade ci-modal" id="whatThisMeansModal" tabindex="-1" aria-labelledby="whatThisMeansModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="whatThisMeansModalLabel">What this means</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p>
+          You likely intended to give wide, cautious ranges. In practice, those ranges were
+          <strong>narrower than the uncertainty justified</strong>.
+        </p>
+        <p class="mb-0">
+          This gap between intended confidence and actual coverage is common—even among experts.
+        </p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- Modal: What this is (and isn’t) -->
 <div class="modal fade ci-modal" id="whatThisIsModal" tabindex="-1" aria-labelledby="whatThisIsModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-lg modal-dialog-scrollable">
@@ -166,14 +199,39 @@
         <p>
           This quiz does <strong>not</strong> compute statistical confidence intervals from sample data.
         </p>
-
         <p>
           It examines how people <strong>set uncertainty ranges when they believe they are being careful</strong>,
           and whether those ranges actually capture the truth over repeated attempts.
         </p>
-
         <p class="mb-0">
           That calibration skill matters when interpreting real scientific studies, health evidence, and policy claims.
+        </p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: A pattern worth noticing -->
+<div class="modal fade ci-modal" id="patternModal" tabindex="-1" aria-labelledby="patternModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="patternModalLabel">A pattern worth noticing</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p>
+          People tend to do well on familiar, everyday quantities.
+        </p>
+        <p>
+          They struggle when values span <strong>orders of magnitude</strong>—GDPs, global totals, long timelines—where uncertainty is often better represented on a
+          <strong>log scale</strong>, not a linear one.
+        </p>
+        <p class="mb-0">
+          Practical tip: if you’re not sure whether the answer is in the millions or billions, your range probably needs to span powers of 10.
         </p>
       </div>
       <div class="modal-footer">
