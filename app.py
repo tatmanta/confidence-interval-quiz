@@ -1,3 +1,4 @@
+# app.py
 from flask import Flask, render_template, request, redirect, url_for, session
 from pathlib import Path
 import json
@@ -118,9 +119,9 @@ def infer_default_unit_system(req) -> str | None:
 
 # -----------------------------
 # Questions
-# IMPORTANT: remove unit text from question.text for any question using unit toggle.
-# Add unit_kind for questions where you want the title suffix to switch.
-# unit_kind must match what your question.html JS expects (e.g., height, length, distance, weight, temp).
+# IMPORTANT:
+# - For any question using the unit toggle, keep question.text as BASE TEXT ONLY (no units baked in).
+# - Add unit_kind for questions where you want the title suffix to switch (height, length, distance, weight, temp, time).
 # -----------------------------
 
 QUESTIONS = [
@@ -129,33 +130,31 @@ QUESTIONS = [
         "text": "Distance from Earth to the nearest star (excluding the Sun), in light-years",
         "true_value": 4.2441,
         "unit": "light-years",
-        # no toggle here; leave as-is
     },
     {
         "id": "q2",
         "text": "GDP of Mongolia, in USD",
         "true_value": 13_637_000_000,
         "unit": "USD",
-        # no toggle here; leave as-is
     },
     {
         "id": "q3",
-        "text": "Height of tallest man in recorded history (inches / cm)",
-        "true_value": 107,  # inches
+        "text": "Height of tallest man in recorded history",
+        "true_value": 107,  # (stored as inches)
         "unit": "inches",
         "unit_kind": "height",
     },
     {
         "id": "q4",
-        "text": "Depth of deepest part of Pacific Ocean (feet / meters)",
-        "true_value": 10_984,  # meters
+        "text": "Depth of deepest part of Pacific Ocean",
+        "true_value": 10_984,  # (stored as meters)
         "unit": "meters",
         "unit_kind": "length",
     },
     {
         "id": "q5",
-        "text": "Average distance from Earth to the Moon (miles / km)",
-        "true_value": 237_674.5,  # miles
+        "text": "Average distance from Earth to the Moon",
+        "true_value": 237_674.5,  # (stored as miles)
         "unit": "miles",
         "unit_kind": "distance",
     },
@@ -184,11 +183,11 @@ QUESTIONS = [
         "unit": "USD",
     },
     {
-    "id": "q10",
-    "text": "Fastest lap time in an F1 car around the Monaco circuit, in seconds",
-    "true_value": 74.260,  # seconds
-    "unit": "seconds",
-    "unit_kind": "time",
+        "id": "q10",
+        "text": "Fastest lap time in an F1 car around the Monaco circuit",
+        "true_value": 74.260,  # seconds
+        "unit": "seconds",
+        "unit_kind": "time",
     },
     {
         "id": "q11",
@@ -222,8 +221,8 @@ QUESTIONS = [
     },
     {
         "id": "q16",
-        "text": "Amount of coal produced by U.S. mines in 2019 (pounds / kg)",
-        "true_value": 1_410_518_000_000,  # pounds
+        "text": "Amount of coal produced by U.S. mines in 2019",
+        "true_value": 1_410_518_000_000,  # (stored as pounds)
         "unit": "pounds",
         "unit_kind": "weight",
     },
@@ -241,8 +240,8 @@ QUESTIONS = [
     },
     {
         "id": "q19",
-        "text": "Full weight (including planes, ammunition, people) of a Nimitz-class aircraft carrier (pounds / kg)",
-        "true_value": 226_679_700,  # pounds
+        "text": "Full weight (including planes, ammunition, people) of a Nimitz-class aircraft carrier",
+        "true_value": 226_679_700,  # (stored as pounds)
         "unit": "pounds",
         "unit_kind": "weight",
     },

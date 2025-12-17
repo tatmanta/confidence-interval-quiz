@@ -1,3 +1,4 @@
+{# templates/question.html #}
 {% extends "base.html" %}
 
 {% block content %}
@@ -128,16 +129,13 @@
       </div>
 
       <!-- ============================
-           UNITS: persist + title suffix + optional conversion
+           UNITS: persist + dynamic title suffix
       =============================== -->
       <script>
         document.addEventListener("DOMContentLoaded", () => {
           const unitSelect = document.getElementById("unitSystem");
           const unitHidden = document.getElementById("unit_system");
-          const kindEl = document.getElementById("unit_kind");
           const titleEl = document.getElementById("questionTitle");
-          const lower = document.getElementById("lower");
-          const upper = document.getElementById("upper");
 
           if (!unitSelect || !unitHidden || !titleEl) return;
 
@@ -162,22 +160,11 @@
           // 2) Map unit kinds to readable labels per system
           //    IMPORTANT: keys must match question.unit_kind values in your question bank.
           const UNIT_SUFFIX = {
-            // Human height: inches / centimeters
             height:   { metric: "in centimeters", imperial: "in inches" },
-
-            // General length/depth: feet / meters  ✅ (fixes Pacific depth)
             length:   { metric: "in meters",      imperial: "in feet"   },
-
-            // Distance: miles / kilometers
             distance: { metric: "in kilometers",  imperial: "in miles"  },
-
-            // Weight: pounds / kilograms
             weight:   { metric: "in kilograms",   imperial: "in pounds" },
-
-            // Temperature: °F / °C
-            temp:     { metric: "in °C",          imperial: "in °F"     }
-
-            // Time: seconds
+            temp:     { metric: "in °C",          imperial: "in °F"     },
             time:     { metric: "in seconds",     imperial: "in seconds" }
           };
 
@@ -190,7 +177,8 @@
               ? UNIT_SUFFIX[kind][system]
               : "";
 
-            titleEl.textContent = suffix ? `${base} (${suffix})` : base;
+            // ✅ "Base text, in miles" / "Base text, in kilometers"
+            titleEl.textContent = suffix ? `${base}, ${suffix}` : base;
           }
 
           updateQuestionTitle();
@@ -198,38 +186,11 @@
           // 3) On change:
           //    - persist preference for next questions
           //    - update title
-          //    - optionally convert existing inputs if functions exist
           unitSelect.addEventListener("change", () => {
-            const prev = unitHidden.value;
             const next = unitSelect.value;
-
             localStorage.setItem("ci_unitSystem", next);
             unitHidden.value = next;
-
             updateQuestionTitle();
-
-            // Optional conversion only if you have unit_kind AND conversion helpers exist
-            if (!kindEl) return;
-
-            const kind = kindEl.value;
-
-            if (typeof parseShorthandNumber !== "function" ||
-                typeof convertValue !== "function" ||
-                typeof formatWithSeparators !== "function") {
-              return;
-            }
-
-            const l = parseShorthandNumber(lower.value);
-            const u = parseShorthandNumber(upper.value);
-
-            if (l != null) {
-              const converted = convertValue(l, kind, prev, next);
-              if (converted != null) lower.value = formatWithSeparators(String(converted));
-            }
-            if (u != null) {
-              const converted = convertValue(u, kind, prev, next);
-              if (converted != null) upper.value = formatWithSeparators(String(converted));
-            }
           });
         });
       </script>
